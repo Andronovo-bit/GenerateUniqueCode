@@ -18,9 +18,9 @@ public class CodeGenerator : ICodeGenerator
         _cache = cache;
     }
 
-    public string GenerateCode(string productId)
+    public string GenerateCode(string id, string salt)
     {
-        var encodeStringKey = $"{productId}{_campaignCodeSettings.PrivateKey}";
+        var encodeStringKey = $"{id}{salt}{_campaignCodeSettings.PrivateKey}";
         var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(encodeStringKey));
 
         if (_cache.TryGetValue(cacheKey, out string cachedCode))
@@ -50,9 +50,9 @@ public class CodeGenerator : ICodeGenerator
         return generatedCode;
     }
 
-    public bool ValidateCode(string productId, string code)
+    public bool ValidateCode(string id, string code, string salt)
     {
-        var generatedCode = GenerateCode(productId);
+        var generatedCode = GenerateCode(id, salt);
         return string.Equals(generatedCode, code, StringComparison.OrdinalIgnoreCase);
     }
 }

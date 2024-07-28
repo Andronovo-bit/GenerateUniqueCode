@@ -18,14 +18,14 @@ public class CodeController : ControllerBase
     [HttpPost("generate")]
     public IActionResult GenerateCode([FromBody] GenerateCodeRequest request)
     {
-        var code = _codeGenerator.GenerateCode(request.productId);
+        var code = _codeGenerator.GenerateCode(request.Id, request.Salt);
         return Ok(code);
     }
 
     [HttpPost("validate")]
     public IActionResult ValidateCode([FromBody] ValidateCodeRequest request)
     {
-        var isValid = _codeGenerator.ValidateCode(request.productId, request.Code);
+        var isValid = _codeGenerator.ValidateCode(request.Id, request.Code, request.Salt);
         return Ok(isValid);
     }
 }
