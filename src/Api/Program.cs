@@ -1,18 +1,29 @@
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using GenerateCampaignCode.Application.Interfaces;
-using GenerateCampaignCode.Application.Requests;
 using GenerateCampaignCode.Application.Services;
 using GenerateCampaignCode.Application.Validators;
 using GenerateCampaignCode.Domain.Entities;
-using System;
+using Serilog;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+var logger = Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
+builder.Host.UseSerilog(logger);
+
+logger.Information("Starting up");
 
 // Add services to the container.
 builder.Services.AddControllers()
         .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<GenerateCodeRequestValidator>())
         .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<ValidateCodeRequestValidator>());
+
 builder.Services.Configure<CampaignCodeSettings>(builder.Configuration.GetSection("CampaignCodeSettings"));
 builder.Services.AddSingleton<ICodeGenerator, CodeGenerator>();
 
@@ -32,9 +43,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+Log.CloseAndFlush();
