@@ -44,7 +44,7 @@ public class CodeGenerator : ICodeGenerator
         string generatedCode = new(code);
 
         var cacheEntryOptions = new MemoryCacheEntryOptions()
-                                .SetSlidingExpiration(TimeSpan.FromDays(1)); // Cache duration
+                                .SetSlidingExpiration(TimeSpan.FromDays(1));
         _cache.Set(cacheKey, generatedCode, cacheEntryOptions);
 
         return generatedCode;
