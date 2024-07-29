@@ -9,15 +9,9 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
-var logger = Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .CreateLogger();
-
-builder.Host.UseSerilog(logger);
-
-logger.Information("Starting up");
+//Add support to logging with SERILOG
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // Add services to the container.
 builder.Services.AddControllers()
