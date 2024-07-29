@@ -25,8 +25,14 @@ builder.Services.AddControllers()
         .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<ValidateCodeRequestValidator>());
 
 builder.Services.Configure<CampaignCodeSettings>(builder.Configuration.GetSection("CampaignCodeSettings"));
-builder.Services.AddSingleton<ICodeGenerator, CodeGenerator>();
+builder.Services.AddScoped<ICodeGenerator, CodeGenerator>();
 
+// built in way to validate scopes on Build()
+builder.Host.UseDefaultServiceProvider((_, serviceProviderOptions) =>
+{
+    serviceProviderOptions.ValidateScopes = true;
+    serviceProviderOptions.ValidateOnBuild = true;
+});
 
 builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

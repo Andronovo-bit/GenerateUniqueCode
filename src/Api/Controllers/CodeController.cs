@@ -18,19 +18,35 @@ public class CodeController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("generate")]
+    [HttpPost("GenerateCodeWithSHA1")]
     public IActionResult GenerateCode([FromBody] GenerateCodeRequest request)
     {
-        _logger.LogInformation("Generating code: {Id} with unique key: {Salt}", request.Id, request.Salt);
-        var code = _codeGenerator.GenerateCode(request.Id, request.Salt);
+        _logger.LogInformation("Generating code with HMACSHA1: {Id} with unique key: {Salt}", request.Id, request.Salt);
+        var code = _codeGenerator.GenerateCodeSHA1(request.Id, request.Salt);
         return Ok(code);
     }
 
-    [HttpPost("validate")]
+    [HttpPost("ValidateCodeWithSHA1")]
     public IActionResult ValidateCode([FromBody] ValidateCodeRequest request)
     {
-        _logger.LogInformation("Validating code: {Id} with unique key: {Salt}", request.Id, request.Salt);
-        var isValid = _codeGenerator.ValidateCode(request.Id, request.Code, request.Salt);
+        _logger.LogInformation("Validating code with HMACSHA1: {Id} with unique key: {Salt}", request.Id, request.Salt);
+        var isValid = _codeGenerator.ValidateCodeSHA1(request.Id, request.Salt, request.Code);
+        return Ok(isValid);
+    }
+
+    [HttpPost("GenerateCodeWithHMACSHA256")]
+    public IActionResult GenerateCodeWithHMACSHA256([FromBody] GenerateCodeRequest request)
+    {
+        _logger.LogInformation("Generating code with HMACSHA256: {Id} with unique key: {Salt}", request.Id, request.Salt);
+        var code = _codeGenerator.GenerateCodeWithHMACSHA256(request.Id, request.Salt);
+        return Ok(code);
+    }
+
+    [HttpPost("ValidateCodeWithHMACSHA256")]
+    public IActionResult ValidateCodeWithHMACSHA256([FromBody] ValidateCodeRequest request)
+    {
+        _logger.LogInformation("Validating code with HMACSHA256: {Id} with unique key: {Salt}", request.Id, request.Salt);
+        var isValid = _codeGenerator.ValidateCodeHMACSHA256(request.Id, request.Salt, request.Code);
         return Ok(isValid);
     }
 }
