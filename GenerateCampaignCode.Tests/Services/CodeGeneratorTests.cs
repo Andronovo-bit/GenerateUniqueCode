@@ -51,7 +51,7 @@ namespace GenerateCampaignCode.Tests.Services
         }
 
         [Fact]
-        public void GenerateCode_ShouldReturnNewCode_WhenNotInCache()
+        public void GenerateCodeWithHMACSHA256_ShouldReturnNewCode_WhenNotInCache()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
@@ -60,7 +60,7 @@ namespace GenerateCampaignCode.Tests.Services
             _memoryCacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cachedCode)).Returns(false);
 
             // Act
-            var result = _codeGenerator.GenerateCode(id, uniqueKey);
+            var result = _codeGenerator.GenerateCodeWithHMACSHA256(id, uniqueKey);
 
             // Assert
             Assert.NotNull(result);
@@ -70,22 +70,22 @@ namespace GenerateCampaignCode.Tests.Services
         }
 
         [Fact]
-        public void ValidateCode_ShouldReturnTrue_WhenCodeIsValid()
+        public void ValidateCodeWithHMACSHA256_ShouldReturnTrue_WhenCodeIsValid()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
             var uniqueKey = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            var code = _codeGenerator.GenerateCode(id, uniqueKey);
+            var code = _codeGenerator.GenerateCodeWithHMACSHA256(id, uniqueKey);
 
             // Act
-            var isValid = _codeGenerator.ValidateCode(id, code, uniqueKey);
+            var isValid = _codeGenerator.ValidateCodeHMACSHA256(id, uniqueKey, code);
 
             // Assert
             Assert.True(isValid);
         }
 
         [Fact]
-        public void ValidateCode_ShouldReturnFalse_WhenCodeIsInvalid()
+        public void ValidateCodeWithHMACSHA256_ShouldReturnFalse_WhenCodeIsInvalid()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
@@ -93,14 +93,92 @@ namespace GenerateCampaignCode.Tests.Services
             var invalidCode = "INVALID_CODE";
 
             // Act
-            var isValid = _codeGenerator.ValidateCode(id, invalidCode, uniqueKey);
+            var isValid = _codeGenerator.ValidateCodeHMACSHA256(id, uniqueKey, invalidCode);
 
             // Assert
             Assert.False(isValid);
         }
 
         [Fact]
-        public void GenerateCode_ShouldReturnUniqueCodes()
+        public void GenerateCodeWithHMACSHA256_ShouldReturnUniqueCodes()
+        {
+            // Arrange
+            var uniqueKeys = new HashSet<string>();
+            var codes = new HashSet<string>();
+            var random = new Random();
+
+            for (int i = 0; i < 1_000_000; i++)
+            {
+                uniqueKeys.Add(random.Next(0, int.MaxValue).ToString());
+            }
+
+            // Act
+            foreach (var uniqueKey in uniqueKeys)
+            {
+                var id = Guid.NewGuid().ToString();
+                var code = _codeGenerator.GenerateCodeWithHMACSHA256(id, uniqueKey);
+                codes.Add(code);
+            }
+
+            // Assert
+            int expectedCount = uniqueKeys.Count;
+            int actualCount = codes.Count;
+            double marginOfError = (double)(expectedCount - actualCount) / expectedCount;
+
+            Assert.True(marginOfError <= 0.00001, $"Margin of error is too high: {marginOfError}");
+        }
+
+        [Fact]
+        public void GenerateCodeWithSHA1_ShouldReturnNewCode_WhenNotInCache()
+        {
+            // Arrange
+            var id = Guid.NewGuid().ToString();
+            var uniqueKey = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            object cachedCode = null;
+            _memoryCacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cachedCode)).Returns(false);
+
+            // Act
+            var result = _codeGenerator.GenerateCodeSHA1(id, uniqueKey);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(_settings.Length, result.Length);
+            Assert.All(result, character => Assert.Contains(character, _settings.Characters));
+
+        }
+
+        [Fact]
+        public void ValidateCodeWithSHA1_ShouldReturnTrue_WhenCodeIsValid()
+        {
+            // Arrange
+            var id = Guid.NewGuid().ToString();
+            var uniqueKey = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var code = _codeGenerator.GenerateCodeSHA1(id, uniqueKey);
+
+            // Act
+            var isValid = _codeGenerator.ValidateCodeSHA1(id, uniqueKey, code);
+
+            // Assert
+            Assert.True(isValid);
+        }
+
+        [Fact]
+        public void ValidateCodeWithSHA1_ShouldReturnFalse_WhenCodeIsInvalid()
+        {
+            // Arrange
+            var id = Guid.NewGuid().ToString();
+            var uniqueKey = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var invalidCode = "INVALID_CODE";
+
+            // Act
+            var isValid = _codeGenerator.ValidateCodeHMACSHA256(id, uniqueKey, invalidCode);
+
+            // Assert
+            Assert.False(isValid);
+        }
+
+        [Fact]
+        public void GenerateCodeWithSHA1_ShouldReturnUniqueCodes()
         {
             // Arrange
             var uniqueKeys = new HashSet<string>();
@@ -116,7 +194,7 @@ namespace GenerateCampaignCode.Tests.Services
             foreach (var uniqueKey in uniqueKeys)
             {
                 var id = Guid.NewGuid().ToString();
-                var code = _codeGenerator.GenerateCode(id, uniqueKey);
+                var code = _codeGenerator.GenerateCodeSHA1(id, uniqueKey);
                 codes.Add(code);
             }
 
