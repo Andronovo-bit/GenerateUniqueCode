@@ -2,6 +2,8 @@
 
 public interface ICodeGenerator
 {
-    string GenerateCode(string id, string salt);
-    bool ValidateCode(string id, string code, string salt);
+    string GenerateCodeSHA1(string id, string salt);
+    string GenerateCodeWithHMACSHA256(string id, string salt);
+    bool ValidateCodeSHA1(string id, string salt, string code);
+    bool ValidateCodeHMACSHA256(string id, string salt, string code);
 }

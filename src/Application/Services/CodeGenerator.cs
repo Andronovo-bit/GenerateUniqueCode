@@ -22,22 +22,29 @@ public class CodeGenerator : ICodeGenerator
         _logger = logger;
     }
 
-    public string? GenerateCode(string id, string salt)
+    public string GenerateCodeSHA1(string id, string salt)
     {
-        var encodeStringKey = $"{id}{salt}{_campaignCodeSettings.PrivateKey}";
-        var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(encodeStringKey));
+        var encodeStringKey = Encoding.UTF8.GetBytes($"{id}{salt}{_campaignCodeSettings.PrivateKey}");
+        var cacheKey = Convert.ToBase64String(encodeStringKey);
 
         if (_cache.TryGetValue(cacheKey, out string cachedCode))
         {
             _logger.LogInformation("Returning cached code: {cachedCode}", cachedCode);
-            return cachedCode;
+            return cachedCode ?? string.Empty;
         }
 
         ReadOnlySpan<char> characters = _campaignCodeSettings.Characters.AsSpan();
         int length = _campaignCodeSettings.Length;
-        ReadOnlySpan<byte> hash = SHA512.HashData(Encoding.UTF8.GetBytes(encodeStringKey));
+        ReadOnlySpan<byte> hash = SHA1.HashData(encodeStringKey);
 
-        int seed = BitConverter.ToInt32(hash.Slice(0, 4));
+        //this code randomly selects a start point in the hash to use as the seed
+
+        //var randomStart = new Random().Next(0, hash.Length - 4);
+        //hash = hash.Slice(randomStart, hash.Length - randomStart);
+        //int seed = BitConverter.ToInt32(hash);
+
+
+        int seed = BitConverter.ToInt32(hash);
         var random = new Random(seed);
 
         Span<char> code = stackalloc char[length];
@@ -54,7 +61,8 @@ public class CodeGenerator : ICodeGenerator
         {
             _cache.Set(cacheKey, generatedCode, cacheEntryOptions);
 
-        }catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Error while caching code: {generatedCode}", generatedCode);
         }
@@ -64,9 +72,35 @@ public class CodeGenerator : ICodeGenerator
         return generatedCode;
     }
 
-    public bool ValidateCode(string id, string code, string salt)
+    public bool ValidateCodeSHA1(string id, string salt, string code)
     {
-        var generatedCode = GenerateCode(id, salt);
+        var generatedCode = GenerateCodeSHA1(id, salt);
         return string.Equals(generatedCode, code, StringComparison.OrdinalIgnoreCase);
     }
+
+    public string GenerateCodeWithHMACSHA256(string id, string salt)
+    {
+        var encodeStringKey = Encoding.UTF8.GetBytes($"{id}{salt}");
+
+        using (HMACSHA256 hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(_campaignCodeSettings.PrivateKey)))
+        {
+            ReadOnlySpan<byte> hashBytes = hmacsha256.ComputeHash(encodeStringKey);
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < _campaignCodeSettings.Length; i++)
+            {
+                int modValue = hashBytes[i] % _campaignCodeSettings.Characters.Length;
+                builder.Append(_campaignCodeSettings.Characters[modValue]);
+            }
+            return builder.ToString();
+        }
+    }
+
+    public bool ValidateCodeHMACSHA256(string id, string salt, string code)
+    {
+        string newCode = GenerateCodeWithHMACSHA256(id, salt);
+
+        return newCode == code;
+    }
+
 }
