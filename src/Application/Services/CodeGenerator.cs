@@ -50,7 +50,14 @@ public class CodeGenerator : ICodeGenerator
 
         var cacheEntryOptions = new MemoryCacheEntryOptions()
                                 .SetSlidingExpiration(TimeSpan.FromDays(1));
-        _cache.Set(cacheKey, generatedCode, cacheEntryOptions);
+        try
+        {
+            _cache.Set(cacheKey, generatedCode, cacheEntryOptions);
+
+        }catch(Exception ex)
+        {
+            _logger.LogError(ex, "Error while caching code: {generatedCode}", generatedCode);
+        }
 
         _logger.LogInformation("Generated new code: {generatedCode}", generatedCode);
 
