@@ -3,5 +3,5 @@
 public class GenerateCodeRequest
 {
     public string Id { get; set; }
-    public string Salt { get; set; } // This is maybe timestamp or some other value
+    public string Salt { get; set; } // This is maybe timestamp or some other unique value
 }
