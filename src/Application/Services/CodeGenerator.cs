@@ -1,9 +1,10 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using GenerateCampaignCode.Application.Interfaces;
+﻿using GenerateCampaignCode.Application.Interfaces;
 using GenerateCampaignCode.Domain.Entities;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace GenerateCampaignCode.Application.Services;
 
@@ -11,20 +12,24 @@ public class CodeGenerator : ICodeGenerator
 {
     private readonly CampaignCodeSettings _campaignCodeSettings;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<CodeGenerator> _logger;
 
-    public CodeGenerator(IOptions<CampaignCodeSettings> options, IMemoryCache cache)
+
+    public CodeGenerator(IOptions<CampaignCodeSettings> options, IMemoryCache cache, ILogger<CodeGenerator> logger)
     {
         _campaignCodeSettings = options.Value;
         _cache = cache;
+        _logger = logger;
     }
 
-    public string GenerateCode(string id, string salt)
+    public string? GenerateCode(string id, string salt)
     {
         var encodeStringKey = $"{id}{salt}{_campaignCodeSettings.PrivateKey}";
         var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(encodeStringKey));
 
         if (_cache.TryGetValue(cacheKey, out string cachedCode))
         {
+            _logger.LogInformation("Returning cached code: {cachedCode}", cachedCode);
             return cachedCode;
         }
 
@@ -46,6 +51,8 @@ public class CodeGenerator : ICodeGenerator
         var cacheEntryOptions = new MemoryCacheEntryOptions()
                                 .SetSlidingExpiration(TimeSpan.FromDays(1));
         _cache.Set(cacheKey, generatedCode, cacheEntryOptions);
+
+        _logger.LogInformation("Generated new code: {generatedCode}", generatedCode);
 
         return generatedCode;
     }
