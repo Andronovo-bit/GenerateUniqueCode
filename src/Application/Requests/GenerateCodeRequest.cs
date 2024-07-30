@@ -2,7 +2,7 @@
 
 namespace GenerateCampaignCode.Application.Requests;
 
-public class GenerateCodeRequest
+public record GenerateCodeRequest
 {
     [Required]
     public string Id { get; set; }
