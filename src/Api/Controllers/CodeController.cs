@@ -5,6 +5,8 @@ using GenerateCampaignCode.Application.Requests;
 namespace GenerateCampaignCode.Api.Controllers;
 
 [ApiController]
+
+[Route("api/code")]
 public class CodeController : ControllerBase
 {
     private readonly ICodeGenerator _codeGenerator;
@@ -17,7 +19,7 @@ public class CodeController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("api/code/generate/sha1")]
+    [HttpPost("generate/sha1")]
     public IActionResult GenerateCode([FromBody] GenerateCodeRequest request)
     {
         _logger.LogInformation("Generating code with HMACSHA1: {Id} with unique key: {Salt}", request.Id, request.Salt);
@@ -25,15 +27,14 @@ public class CodeController : ControllerBase
         return Ok(code);
     }
 
-    [HttpPost("api/code/validate/sha1")]
+    [HttpPost("validate/sha1")]
     public IActionResult ValidateCode([FromBody] ValidateCodeRequest request)
     {
         _logger.LogInformation("Validating code with HMACSHA1: {Id} with unique key: {Salt}", request.Id, request.Salt);
         var isValid = _codeGenerator.ValidateCodeSHA1(request.Id, request.Salt, request.Code);
         return Ok(isValid);
     }
-
-    [HttpPost("api/code/generate/hmacsha256")]
+    [HttpPost("generate/hmacsha256")]
     public IActionResult GenerateCodeWithHMACSHA256([FromBody] GenerateCodeRequest request)
     {
         _logger.LogInformation("Generating code with HMACSHA256: {Id} with unique key: {Salt}", request.Id, request.Salt);
@@ -41,7 +42,7 @@ public class CodeController : ControllerBase
         return Ok(code);
     }
 
-    [HttpPost("api/code/validate/hmacsha256")]
+    [HttpPost("validate/hmacsha256")]
     public IActionResult ValidateCodeWithHMACSHA256([FromBody] ValidateCodeRequest request)
     {
         _logger.LogInformation("Validating code with HMACSHA256: {Id} with unique key: {Salt}", request.Id, request.Salt);

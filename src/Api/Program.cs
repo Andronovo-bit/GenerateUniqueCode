@@ -9,7 +9,6 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
-//Add support to logging with SERILOG
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
